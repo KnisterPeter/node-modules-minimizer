@@ -1,5 +1,5 @@
 {
-  "name": "node-modules-optimizer",
+  "name": "node-modules-minimizer",
   "version": "0.0.1",
   "type": "module",
   "engines": {
