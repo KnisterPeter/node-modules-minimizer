@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.1.0
+
+### Minor Changes
+
+- 82e36dd: Support @scope/name resolution
+
 ## 0.0.2
 
 ### Patch Changes
