@@ -74,9 +74,12 @@ class ResolverImpl implements Resolver {
       return findInNodeModules(moduleId, parent);
     };
 
-    const moduleIdParts = this.moduleId.split("/", 2);
+    const moduleMatches = this.moduleId.match(
+      /^(?<package>(?:@[^/]+\/[^/]+|[^/]+))(?:\/(?<path>.*))?/,
+    );
+    if (!moduleMatches?.groups?.package) this.resolutionError();
     const packagePath = findInNodeModules(
-      moduleIdParts[0],
+      moduleMatches?.groups?.package,
       Path.dirname(this.source),
     );
 
@@ -95,10 +98,10 @@ class ResolverImpl implements Resolver {
 
       if (packageJson.exports) {
         let importSubpath: string;
-        if (moduleIdParts.length === 1) {
-          importSubpath = ".";
+        if (moduleMatches.groups?.path) {
+          importSubpath = `./${moduleMatches.groups.path}`;
         } else {
-          importSubpath = `./${moduleIdParts[1]}`;
+          importSubpath = ".";
         }
 
         const exports = packageJson.exports[importSubpath];

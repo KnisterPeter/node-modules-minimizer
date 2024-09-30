@@ -247,4 +247,23 @@ describe("Resolver", () => {
       },
     ]);
   });
+
+  it("does resolve scoped packages", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/@scope/tool/index.js": JSON.stringify({}),
+    });
+
+    const result = resolveModule(
+      "@scope/tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/node_modules/@scope/tool/index.js",
+      },
+    ]);
+  });
 });
