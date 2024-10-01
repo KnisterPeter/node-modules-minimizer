@@ -1,4 +1,3 @@
-import type { readFileSync as readFileSyncNode } from "node:fs";
 import Path from "node:path";
 import type { File } from "./file.js";
 
@@ -94,9 +93,18 @@ class ResolverImpl implements Resolver {
     stat = statPath(path, this.fs);
     if (stat) {
       files.push({ path, isFile: false });
-      const packageJson = JSON.parse(this.fs.readFileSync(path, "utf8"));
+      const packageJson = JSON.parse(
+        this.fs.readFileSync(path, "utf8"),
+      ) as unknown;
 
-      if (packageJson.exports) {
+      if (!packageJson || typeof packageJson !== "object")
+        this.resolutionError();
+
+      if (
+        "exports" in packageJson &&
+        typeof packageJson.exports === "object" &&
+        packageJson.exports
+      ) {
         let importSubpath: string;
         if (moduleMatches.groups?.path) {
           importSubpath = `./${moduleMatches.groups.path}`;
@@ -104,17 +112,28 @@ class ResolverImpl implements Resolver {
           importSubpath = ".";
         }
 
-        const exports = packageJson.exports[importSubpath];
-        if (typeof exports === "string") {
-          path = Path.join(packagePath, exports);
-        } else {
-          path = Path.join(packagePath, exports.import.default);
-        }
+        let exportedPath: string | undefined;
+        const exports = (packageJson.exports as Record<string, unknown>)[
+          importSubpath
+        ];
+        if (!exports) this.resolutionError();
+
+        const getExport = (exports: unknown): string => {
+          if (exports === undefined || exports === null) this.resolutionError();
+          if (typeof exports === "string") return exports;
+          if (!(typeof exports === "object")) this.resolutionError();
+          if ("import" in exports) return getExport(exports.import);
+          if ("default" in exports) return getExport(exports.default);
+          this.resolutionError();
+        };
+
+        path = Path.join(packagePath, getExport(exports));
+
         files.push({ path, isFile: true });
         return files;
       }
 
-      if (packageJson.main) {
+      if ("main" in packageJson && typeof packageJson.main === "string") {
         path = Path.join(packagePath, packageJson.main);
         files.push({ path, isFile: true });
         return files;
