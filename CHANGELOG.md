@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.1.1
+
+### Patch Changes
+
+- f989a8b: Remove invalid access while resolving export maps
+
 ## 0.1.0
 
 ### Minor Changes
