@@ -1,9 +1,12 @@
 import Path from "node:path";
 import type { File } from "./file.js";
-import path from "node:path";
 
 interface FileSystem {
-  lstatSync(path: string): { isSymbolicLink(): boolean };
+  lstatSync(path: string): {
+    isSymbolicLink(): boolean;
+    isFile(): boolean;
+    isDirectory(): boolean;
+  };
   realpathSync(path: string): string;
   readFileSync(path: string, encoding: "utf8"): string;
 }
@@ -164,12 +167,21 @@ class ResolverImpl implements Resolver {
       ? this.moduleId
       : Path.join(base, this.moduleId);
     for (const ext of ["", ".js"]) {
-      const testPath = path + ext;
-      if (hasFile(testPath, this.fs)) {
+      let testPath = path + ext;
+      const stat = statPath(testPath, this.fs);
+      if (stat?.isFile()) {
         return {
           path: this.fs.realpathSync(Path.resolve(testPath)),
           isFile: true,
         };
+      } else if (stat?.isDirectory()) {
+        testPath = Path.join(testPath, "index.js");
+        if (hasFile(testPath, this.fs)) {
+          return {
+            path: this.fs.realpathSync(Path.resolve(testPath)),
+            isFile: true,
+          };
+        }
       }
     }
 

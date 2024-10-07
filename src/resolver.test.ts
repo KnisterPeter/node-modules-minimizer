@@ -479,4 +479,23 @@ describe("Resolver", () => {
       },
     ]);
   });
+
+  it("does resolve modules from directory names", () => {
+    const vol = Volume.fromJSON({
+      "/folder/other/index.js": "",
+    });
+
+    const result = resolveModule(
+      "./other",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/other/index.js",
+      },
+    ]);
+  });
 });
