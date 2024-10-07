@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.3.0
+
+### Minor Changes
+
+- 3e06d56: Support for commonjs require imports
+
 ## 0.2.2
 
 ### Patch Changes
