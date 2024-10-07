@@ -36,7 +36,7 @@ class ResolverImpl implements Resolver {
   public run(): File[] {
     const requiredFiles: File[] = [];
 
-    if (this.moduleId.startsWith(".")) {
+    if (this.moduleId.startsWith(".") || this.moduleId.startsWith("/")) {
       requiredFiles.push(this.resolveModule());
     } else {
       requiredFiles.push(...this.resolvePackage());
@@ -163,7 +163,7 @@ class ResolverImpl implements Resolver {
     let path = Path.join(base, this.moduleId);
     if (hasFile(path, this.fs)) {
       return {
-        path: Path.resolve(path),
+        path: this.fs.realpathSync(Path.resolve(path)),
         isFile: true,
       };
     }
@@ -171,7 +171,7 @@ class ResolverImpl implements Resolver {
     if (this.source.endsWith(".ts")) {
       path = Path.join(base, `${Path.basename(this.moduleId, ".js")}.ts`);
       if (hasFile(path, this.fs)) {
-        return { path: Path.resolve(path), isFile: true };
+        return { path: this.fs.realpathSync(Path.resolve(path)), isFile: true };
       }
     }
 

@@ -22,8 +22,13 @@ export function getImportedFiles(...entrypoints: string[]): string[] {
         Path.join(process.cwd(), "package.json"),
         Fs,
       );
-    } catch {
-      console.warn(`Warn: Entrypoint '${entrypoint}' could not be resolved`);
+    } catch (err) {
+      console.warn(
+        `Warn: Entrypoint '${entrypoint}' could not be resolved`,
+        typeof err === "object" && err && "message" in err
+          ? `: ${err.message}`
+          : "",
+      );
       return [];
     }
   });
