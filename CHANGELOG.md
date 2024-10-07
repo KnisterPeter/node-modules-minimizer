@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.5.0
+
+### Minor Changes
+
+- 6cc40d5: Resolve directory indexes
+
 ## 0.4.0
 
 ### Minor Changes
