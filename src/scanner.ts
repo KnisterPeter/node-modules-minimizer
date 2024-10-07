@@ -62,6 +62,12 @@ export class ScannerImpl implements Scanner {
         this.visitDynamicImport(node);
         break;
       }
+      case ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.escapedText === "require": {
+        this.visitDynamicImport(node);
+        break;
+      }
       default:
         node.forEachChild((node) => this.visitNode(node));
         break;
@@ -81,10 +87,7 @@ export class ScannerImpl implements Scanner {
   }
 
   private visitDynamicImport(node: ts.CallExpression) {
-    for (let i = 0, l = node.arguments.length; i < l; i++) {
-      const argument = node.arguments[i];
-      this.addModuleToScan(node, argument);
-    }
+    this.addModuleToScan(node, node.arguments[0]);
   }
 
   private addModuleToScan(node: ts.Node, expression: ts.Expression) {
