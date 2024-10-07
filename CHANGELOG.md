@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.4.0
+
+### Minor Changes
+
+- fd88727: Allow requires without file extension
+
 ## 0.3.0
 
 ### Minor Changes
