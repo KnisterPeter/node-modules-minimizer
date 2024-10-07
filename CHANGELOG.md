@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.1.2
+
+### Patch Changes
+
+- 0768eb4: Reimplement export map resolution
+
 ## 0.1.1
 
 ### Patch Changes
