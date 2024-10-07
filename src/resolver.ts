@@ -1,9 +1,12 @@
 import Path from "node:path";
 import type { File } from "./file.js";
-import path from "node:path";
 
 interface FileSystem {
-  lstatSync(path: string): { isSymbolicLink(): boolean };
+  lstatSync(path: string): {
+    isSymbolicLink(): boolean;
+    isFile(): boolean;
+    isDirectory(): boolean;
+  };
   realpathSync(path: string): string;
   readFileSync(path: string, encoding: "utf8"): string;
 }
@@ -36,7 +39,7 @@ class ResolverImpl implements Resolver {
   public run(): File[] {
     const requiredFiles: File[] = [];
 
-    if (this.moduleId.startsWith(".")) {
+    if (this.moduleId.startsWith(".") || this.moduleId.startsWith("/")) {
       requiredFiles.push(this.resolveModule());
     } else {
       requiredFiles.push(...this.resolvePackage());
@@ -160,18 +163,35 @@ class ResolverImpl implements Resolver {
   private resolveModule(): File {
     const base = Path.dirname(this.source);
 
-    let path = Path.join(base, this.moduleId);
-    if (hasFile(path, this.fs)) {
-      return {
-        path: Path.resolve(path),
-        isFile: true,
-      };
+    let path = this.moduleId.startsWith("/")
+      ? this.moduleId
+      : Path.join(base, this.moduleId);
+    for (const ext of ["", ".js"]) {
+      let testPath = path + ext;
+      const stat = statPath(testPath, this.fs);
+      if (stat?.isFile()) {
+        return {
+          path: this.fs.realpathSync(Path.resolve(testPath)),
+          isFile: true,
+        };
+      } else if (stat?.isDirectory()) {
+        testPath = Path.join(testPath, "index.js");
+        if (hasFile(testPath, this.fs)) {
+          return {
+            path: this.fs.realpathSync(Path.resolve(testPath)),
+            isFile: true,
+          };
+        }
+      }
     }
 
     if (this.source.endsWith(".ts")) {
-      path = Path.join(base, `${Path.basename(this.moduleId, ".js")}.ts`);
+      const tsModuleId = this.moduleId.replace(/\.js$/, ".ts");
+      path = tsModuleId.startsWith("/")
+        ? tsModuleId
+        : Path.join(base, tsModuleId);
       if (hasFile(path, this.fs)) {
-        return { path: Path.resolve(path), isFile: true };
+        return { path: this.fs.realpathSync(Path.resolve(path)), isFile: true };
       }
     }
 

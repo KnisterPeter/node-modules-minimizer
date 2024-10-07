@@ -24,6 +24,25 @@ describe("Resolver", () => {
     ]);
   });
 
+  it("does resolve absolute files", () => {
+    const vol = Volume.fromJSON({
+      "/folder/module.js": "",
+    });
+
+    const result = resolveModule(
+      "/folder/module.js",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/module.js",
+      },
+    ]);
+  });
+
   it("does resolve (relative) typescript files", () => {
     const vol = Volume.fromJSON({
       "/folder/module.ts": "",
@@ -438,6 +457,44 @@ describe("Resolver", () => {
       {
         isFile: true,
         path: "/folder/node_modules/tool/dist/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve modules without file extension", () => {
+    const vol = Volume.fromJSON({
+      "/folder/other.js": "",
+    });
+
+    const result = resolveModule(
+      "./other",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/other.js",
+      },
+    ]);
+  });
+
+  it("does resolve modules from directory names", () => {
+    const vol = Volume.fromJSON({
+      "/folder/other/index.js": "",
+    });
+
+    const result = resolveModule(
+      "./other",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/other/index.js",
       },
     ]);
   });
