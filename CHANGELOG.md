@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.2.2
+
+### Patch Changes
+
+- 93d7c8f: Fix absolute modules
+
 ## 0.2.1
 
 ### Patch Changes
