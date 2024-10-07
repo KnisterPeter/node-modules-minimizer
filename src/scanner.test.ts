@@ -12,6 +12,7 @@ describe("Scanner", () => {
         console.log("Hello, World!");
       `,
       ts.ScriptTarget.ESNext,
+      /* setParentNodes: */ true,
     );
 
     const scanner = createScanner(source);
@@ -33,6 +34,26 @@ describe("Scanner", () => {
         import('./index.ts');
       `,
       ts.ScriptTarget.ESNext,
+      /* setParentNodes: */ true,
+    );
+
+    const scanner = createScanner(source);
+    scanner.run();
+
+    Assert.deepEqual(
+      scanner.files.map((file) => Path.relative(process.cwd(), file.path)),
+      ["src/index.ts"],
+    );
+  });
+
+  it("should resolve commonjs requires", () => {
+    const source = ts.createSourceFile(
+      "src/file.ts",
+      `
+        require('./index.ts');
+      `,
+      ts.ScriptTarget.ESNext,
+      /* setParentNodes: */ true,
     );
 
     const scanner = createScanner(source);

@@ -3,8 +3,11 @@
 import Fs from "node:fs";
 import Path from "node:path";
 import sade from "sade";
-import pkg from "../package.json" with { type: "json" };
 import { findUnusedFilesInNodeModules, getImportedFiles } from "./index.ts";
+
+const pkg = JSON.parse(
+  Fs.readFileSync(Path.join(import.meta.dirname, "../package.json"), "utf8"),
+);
 
 sade(`${pkg.name} <entrypoints..>`)
   .version(pkg.version)

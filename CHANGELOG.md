@@ -1,5 +1,30 @@
 # node-modules-minimizer
 
+## 0.3.0
+
+### Minor Changes
+
+- 3e06d56: Support for commonjs require imports
+
+## 0.2.2
+
+### Patch Changes
+
+- 93d7c8f: Fix absolute modules
+
+## 0.2.1
+
+### Patch Changes
+
+- 72ac22d: Resolve symlinks in more cases
+- 72ac22d: Fix absolute files
+
+## 0.2.0
+
+### Minor Changes
+
+- f7b59c9: Entrypoints are optional
+
 ## 0.1.2
 
 ### Patch Changes

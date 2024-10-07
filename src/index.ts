@@ -15,9 +15,23 @@ export const languageOptions: ts.CreateSourceFileOptions = {
 };
 
 export function getImportedFiles(...entrypoints: string[]): string[] {
-  const filesToScan = entrypoints.flatMap((entrypoint) =>
-    resolveModule(entrypoint, Path.join(process.cwd(), "package.json"), Fs),
-  );
+  const filesToScan = entrypoints.flatMap((entrypoint) => {
+    try {
+      return resolveModule(
+        entrypoint,
+        Path.join(process.cwd(), "package.json"),
+        Fs,
+      );
+    } catch (err) {
+      console.warn(
+        `Warn: Entrypoint '${entrypoint}' could not be resolved`,
+        typeof err === "object" && err && "message" in err
+          ? `: ${err.message}`
+          : "",
+      );
+      return [];
+    }
+  });
 
   const scannedFiles = new Set<string>();
   const importedFiles = new Set<string>();
