@@ -24,6 +24,25 @@ describe("Resolver", () => {
     ]);
   });
 
+  it("does resolve absolute files", () => {
+    const vol = Volume.fromJSON({
+      "/folder/module.js": "",
+    });
+
+    const result = resolveModule(
+      "/folder/module.js",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/module.js",
+      },
+    ]);
+  });
+
   it("does resolve (relative) typescript files", () => {
     const vol = Volume.fromJSON({
       "/folder/module.ts": "",
