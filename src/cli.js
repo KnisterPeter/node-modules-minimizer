@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 // @ts-check
-import("ts-blank-space/register");
-import("./run.js");
+
+import("ts-blank-space/register").then(() => import("./run.js"));
