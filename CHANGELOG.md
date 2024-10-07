@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.2.0
+
+### Minor Changes
+
+- f7b59c9: Entrypoints are optional
+
 ## 0.1.2
 
 ### Patch Changes
