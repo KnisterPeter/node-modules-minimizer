@@ -1,5 +1,12 @@
 # node-modules-minimizer
 
+## 0.2.1
+
+### Patch Changes
+
+- 72ac22d: Resolve symlinks in more cases
+- 72ac22d: Fix absolute files
+
 ## 0.2.0
 
 ### Minor Changes
