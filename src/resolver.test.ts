@@ -460,4 +460,23 @@ describe("Resolver", () => {
       },
     ]);
   });
+
+  it("does resolve modules without file extension", () => {
+    const vol = Volume.fromJSON({
+      "/folder/other.js": "",
+    });
+
+    const result = resolveModule(
+      "./other",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/other.js",
+      },
+    ]);
+  });
 });

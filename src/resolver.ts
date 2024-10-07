@@ -163,11 +163,14 @@ class ResolverImpl implements Resolver {
     let path = this.moduleId.startsWith("/")
       ? this.moduleId
       : Path.join(base, this.moduleId);
-    if (hasFile(path, this.fs)) {
-      return {
-        path: this.fs.realpathSync(Path.resolve(path)),
-        isFile: true,
-      };
+    for (const ext of ["", ".js"]) {
+      const testPath = path + ext;
+      if (hasFile(testPath, this.fs)) {
+        return {
+          path: this.fs.realpathSync(Path.resolve(testPath)),
+          isFile: true,
+        };
+      }
     }
 
     if (this.source.endsWith(".ts")) {
