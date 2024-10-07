@@ -1,5 +1,6 @@
 import Path from "node:path";
 import type { File } from "./file.js";
+import path from "node:path";
 
 interface FileSystem {
   lstatSync(path: string): { isSymbolicLink(): boolean };
@@ -63,9 +64,7 @@ class ResolverImpl implements Resolver {
           path = this.fs.realpathSync(path);
           stat = statPath(path, this.fs);
         }
-        if (stat) {
-          return path;
-        }
+        if (stat) return path;
       }
 
       const parent = Path.dirname(dir);
@@ -77,21 +76,21 @@ class ResolverImpl implements Resolver {
       /^(?<package>(?:@[^/]+\/[^/]+|[^/]+))(?:\/(?<path>.*))?/,
     );
     if (!moduleMatches?.groups?.package) this.resolutionError();
+    const packageImportName = moduleMatches.groups.package;
+    const packageImportPath: string | undefined = moduleMatches.groups.path;
     const packagePath = findInNodeModules(
-      moduleMatches?.groups?.package,
+      packageImportName,
       Path.dirname(this.source),
     );
 
     let path = Path.join(packagePath, "index.js");
-    let stat = statPath(path, this.fs);
-    if (stat) {
+    if (hasFile(path, this.fs)) {
       files.push({ path, isFile: true });
       return files;
     }
 
     path = Path.join(packagePath, "package.json");
-    stat = statPath(path, this.fs);
-    if (stat) {
+    if (hasFile(path, this.fs)) {
       files.push({ path, isFile: false });
       const packageJson = JSON.parse(
         this.fs.readFileSync(path, "utf8"),
@@ -100,37 +99,17 @@ class ResolverImpl implements Resolver {
       if (!packageJson || typeof packageJson !== "object")
         this.resolutionError();
 
-      if (
-        "exports" in packageJson &&
-        typeof packageJson.exports === "object" &&
-        packageJson.exports
-      ) {
-        let importSubpath: string;
-        if (moduleMatches.groups?.path) {
-          importSubpath = `./${moduleMatches.groups.path}`;
-        } else {
-          importSubpath = ".";
+      if ("exports" in packageJson) {
+        const resolved = this.resolveExportMap(
+          packagePath,
+          packageJson.exports,
+          packageImportName,
+          packageImportPath,
+        );
+        if (resolved) {
+          files.push(resolved);
+          return files;
         }
-
-        let exportedPath: string | undefined;
-        const exports = (packageJson.exports as Record<string, unknown>)[
-          importSubpath
-        ];
-        if (!exports) this.resolutionError();
-
-        const getExport = (exports: unknown): string => {
-          if (exports === undefined || exports === null) this.resolutionError();
-          if (typeof exports === "string") return exports;
-          if (!(typeof exports === "object")) this.resolutionError();
-          if ("import" in exports) return getExport(exports.import);
-          if ("default" in exports) return getExport(exports.default);
-          this.resolutionError();
-        };
-
-        path = Path.join(packagePath, getExport(exports));
-
-        files.push({ path, isFile: true });
-        return files;
       }
 
       if ("main" in packageJson && typeof packageJson.main === "string") {
@@ -143,12 +122,46 @@ class ResolverImpl implements Resolver {
     this.resolutionError();
   }
 
+  private resolveExportMap(
+    packagePath: string,
+    exportMap: unknown,
+    packageImportName: string,
+    packageImportPath: string | undefined,
+  ): File | undefined {
+    let toResolve: unknown = exportMap;
+
+    if (typeof toResolve === "object" && toResolve) {
+      const importPath = packageImportPath ? `./${packageImportPath}` : ".";
+      if (importPath in toResolve) {
+        toResolve = (toResolve as Record<string, unknown>)[importPath];
+      }
+    }
+
+    if (typeof toResolve === "object" && toResolve) {
+      for (const [k, v] of Object.entries(
+        toResolve as Record<string, unknown>,
+      )) {
+        if (k === "import") {
+          toResolve = (toResolve as Record<string, unknown>)["import"];
+          break;
+        } else if (k === "default") {
+          toResolve = (toResolve as Record<string, unknown>)["default"];
+          break;
+        }
+      }
+    }
+
+    if (typeof toResolve === "string") {
+      const path = Path.join(packagePath, toResolve);
+      if (hasFile(path, this.fs)) return { path, isFile: true };
+    }
+  }
+
   private resolveModule(): File {
     const base = Path.dirname(this.source);
 
     let path = Path.join(base, this.moduleId);
-    let stat = statPath(path, this.fs);
-    if (stat) {
+    if (hasFile(path, this.fs)) {
       return {
         path: Path.resolve(path),
         isFile: true,
@@ -157,8 +170,7 @@ class ResolverImpl implements Resolver {
 
     if (this.source.endsWith(".ts")) {
       path = Path.join(base, `${Path.basename(this.moduleId, ".js")}.ts`);
-      stat = statPath(path, this.fs);
-      if (stat) {
+      if (hasFile(path, this.fs)) {
         return { path: Path.resolve(path), isFile: true };
       }
     }
@@ -173,4 +185,8 @@ function statPath(path: string, fs: FileSystem) {
   } catch {
     return;
   }
+}
+
+function hasFile(path: string, fs: FileSystem) {
+  return Boolean(statPath(path, fs));
 }

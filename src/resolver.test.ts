@@ -105,65 +105,6 @@ describe("Resolver", () => {
     ]);
   });
 
-  it("does resolve packages with package.json simple export map", () => {
-    const vol = Volume.fromJSON({
-      "/folder/node_modules/tool/package.json": JSON.stringify({
-        exports: {
-          ".": "./dist/index.js",
-        },
-      }),
-    });
-
-    const result = resolveModule(
-      "tool",
-      "/folder/file",
-      createFsFromVolume(vol) as any,
-    );
-
-    Assert.deepEqual(result, [
-      {
-        isFile: false,
-        path: "/folder/node_modules/tool/package.json",
-      },
-      {
-        isFile: true,
-        path: "/folder/node_modules/tool/dist/index.js",
-      },
-    ]);
-  });
-
-  it("does resolve packages with package.json export map and default kind", () => {
-    const vol = Volume.fromJSON({
-      "/folder/node_modules/tool/package.json": JSON.stringify({
-        exports: {
-          ".": {
-            import: {
-              types: "./dist/index.d.ts",
-              default: "./dist/index.js",
-            },
-          },
-        },
-      }),
-    });
-
-    const result = resolveModule(
-      "tool",
-      "/folder/file",
-      createFsFromVolume(vol) as any,
-    );
-
-    Assert.deepEqual(result, [
-      {
-        isFile: false,
-        path: "/folder/node_modules/tool/package.json",
-      },
-      {
-        isFile: true,
-        path: "/folder/node_modules/tool/dist/index.js",
-      },
-    ]);
-  });
-
   it("does throw an error on unresolved imports", () => {
     const vol = Volume.fromJSON({});
 
@@ -220,18 +161,35 @@ describe("Resolver", () => {
     ]);
   });
 
-  it("does resolve deep imports with export map", () => {
+  it("does resolve scoped packages", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/@scope/tool/index.js": JSON.stringify({}),
+    });
+
+    const result = resolveModule(
+      "@scope/tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: true,
+        path: "/folder/node_modules/@scope/tool/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve file entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
-        exports: {
-          "./some": "./dist/index.js",
-        },
+        exports: "./dist/index.js",
       }),
       "/folder/node_modules/tool/dist/index.js": "",
     });
 
     const result = resolveModule(
-      "tool/some",
+      "tool",
       "/folder/file",
       createFsFromVolume(vol) as any,
     );
@@ -248,21 +206,238 @@ describe("Resolver", () => {
     ]);
   });
 
-  it("does resolve scoped packages", () => {
+  it("does resolve package-name entry from export map", () => {
     const vol = Volume.fromJSON({
-      "/folder/node_modules/@scope/tool/index.js": JSON.stringify({}),
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          ".": "./dist/index.js",
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.js": "",
     });
 
     const result = resolveModule(
-      "@scope/tool",
+      "tool",
       "/folder/file",
       createFsFromVolume(vol) as any,
     );
 
     Assert.deepEqual(result, [
       {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
         isFile: true,
-        path: "/folder/node_modules/@scope/tool/index.js",
+        path: "/folder/node_modules/tool/dist/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve subpath import entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          "./deep": "./dist/deep/index.js",
+        },
+      }),
+      "/folder/node_modules/tool/dist/deep/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool/deep",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/deep/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve conditional export entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          import: "./dist/index.js",
+          require: "./dist/index.cjs",
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve conditional export (order check) entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          require: "./dist/index.cjs",
+          import: "./dist/index.js",
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve conditional export (default) entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          require: "./dist/index.cjs",
+          default: "./dist/index.js",
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve conditional export (default order) entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          default: "./dist/index.js",
+          import: "./dist/index.mjs",
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve conditional export (default order) entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          "./deep": {
+            import: "./dist/index.mjs",
+            default: "./dist/index.js",
+          },
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.mjs": "",
+    });
+
+    const result = resolveModule(
+      "tool/deep",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/index.mjs",
+      },
+    ]);
+  });
+
+  it("does resolve conditional export (nested default) entry from export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        exports: {
+          "./deep": {
+            node: {
+              require: "./dist/index.cjs",
+            },
+            default: "./dist/index.js",
+          },
+        },
+      }),
+      "/folder/node_modules/tool/dist/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool/deep",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/index.js",
       },
     ]);
   });
