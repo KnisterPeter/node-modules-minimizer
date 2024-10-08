@@ -284,6 +284,7 @@ describe("Resolver", () => {
   it("does resolve conditional export entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
+        type: "module",
         exports: {
           import: "./dist/index.js",
           require: "./dist/index.cjs",
@@ -313,6 +314,7 @@ describe("Resolver", () => {
   it("does resolve conditional export (order check) entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
+        type: "module",
         exports: {
           require: "./dist/index.cjs",
           import: "./dist/index.js",
@@ -342,6 +344,7 @@ describe("Resolver", () => {
   it("does resolve conditional export (default) entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
+        type: "module",
         exports: {
           require: "./dist/index.cjs",
           default: "./dist/index.js",
@@ -371,6 +374,7 @@ describe("Resolver", () => {
   it("does resolve conditional export (default order) entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
+        type: "module",
         exports: {
           default: "./dist/index.js",
           import: "./dist/index.mjs",
@@ -400,6 +404,7 @@ describe("Resolver", () => {
   it("does resolve conditional export (default order) entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
+        type: "module",
         exports: {
           "./deep": {
             import: "./dist/index.mjs",
@@ -431,6 +436,7 @@ describe("Resolver", () => {
   it("does resolve conditional export (nested default) entry from export map", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({
+        type: "module",
         exports: {
           "./deep": {
             node: {

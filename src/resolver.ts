@@ -28,12 +28,32 @@ class ResolverImpl implements Resolver {
   private moduleId: string;
   private source: string;
 
+  private mode: "module" | "commonjs";
+
   private fs: FileSystem;
 
   constructor(moduleId: string, source: string, fs: FileSystem) {
     this.moduleId = moduleId;
     this.source = source;
     this.fs = fs;
+    this.mode = this.calculateResolverMode();
+  }
+
+  private calculateResolverMode(): "module" | "commonjs" {
+    const isModule = [".mjs", ".mts"].some((ext) => this.source.endsWith(ext));
+    if (isModule) return "module";
+    const isCommonJs = [".cjs", ".cts"].some((ext) =>
+      this.source.endsWith(ext),
+    );
+    if (isCommonJs) return "commonjs";
+
+    const pkg = readPackageJson(this.source, this.fs);
+    return pkg &&
+      typeof pkg === "object" &&
+      "type" in pkg &&
+      pkg?.type === "module"
+      ? "module"
+      : "commonjs";
   }
 
   public run(): File[] {
@@ -106,7 +126,6 @@ class ResolverImpl implements Resolver {
         const resolved = this.resolveExportMap(
           packagePath,
           packageJson.exports,
-          packageImportName,
           packageImportPath,
         );
         if (resolved) {
@@ -128,7 +147,6 @@ class ResolverImpl implements Resolver {
   private resolveExportMap(
     packagePath: string,
     exportMap: unknown,
-    packageImportName: string,
     packageImportPath: string | undefined,
   ): File | undefined {
     let toResolve: unknown = exportMap;
@@ -144,11 +162,11 @@ class ResolverImpl implements Resolver {
       for (const [k, v] of Object.entries(
         toResolve as Record<string, unknown>,
       )) {
-        if (k === "import") {
-          toResolve = (toResolve as Record<string, unknown>)["import"];
-          break;
-        } else if (k === "default") {
+        if (k === "default") {
           toResolve = (toResolve as Record<string, unknown>)["default"];
+          break;
+        } else if (k === "import") {
+          toResolve = (toResolve as Record<string, unknown>)["import"];
           break;
         }
       }
@@ -209,4 +227,21 @@ function statPath(path: string, fs: FileSystem) {
 
 function hasFile(path: string, fs: FileSystem) {
   return Boolean(statPath(path, fs));
+}
+
+function readPackageJson(path: string, fs: FileSystem): unknown {
+  let directory = path;
+  let stat = statPath(directory, fs);
+  if (stat?.isFile()) {
+    directory = Path.dirname(directory);
+  }
+  while (true) {
+    const packageJsonPath = Path.join(directory, "package.json");
+    if (hasFile(packageJsonPath, fs)) {
+      return JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    }
+    const parent = Path.dirname(directory);
+    if (parent === directory) return;
+    directory = parent;
+  }
 }
