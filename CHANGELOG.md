@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.6.0
+
+### Minor Changes
+
+- 4801e46: Add heuristic for optional imports/requires
+
 ## 0.5.1
 
 ### Patch Changes
