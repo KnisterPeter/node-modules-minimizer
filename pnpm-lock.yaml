@@ -26,10 +26,10 @@ importers:
         version: 2.27.9
       '@types/node':
         specifier: ^22.5.5
-        version: 22.7.4
+        version: 22.7.5
       memfs:
         specifier: ^4.12.0
-        version: 4.12.0
+        version: 4.13.0
       node:
         specifier: ^22.9.0
         version: 22.9.0
@@ -114,8 +114,8 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@jsonjoy.com/util@1.3.0':
-    resolution: {integrity: sha512-Cebt4Vk7k1xHy87kHY7KSPLT77A7Ev7IfOblyLZhtYEhrdQ6fX4EoLq3xOQ3O/DRMEh2ok5nyC180E+ABS8Wmw==}
+  '@jsonjoy.com/util@1.5.0':
+    resolution: {integrity: sha512-ojoNsrIuPI9g6o8UxhraZQSyF2ByJanAY4cTFbc8Mf2AXEF4aQRGY1dJxyJpuyav8r9FGflEt/Ff3u5Nt6YMPA==}
     engines: {node: '>=10.0'}
     peerDependencies:
       tslib: '2'
@@ -141,8 +141,8 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@22.7.4':
-    resolution: {integrity: sha512-y+NPi1rFzDs1NdQHHToqeiX2TIS79SWEAw9GYhkkx8bD0ChpfqC+n2j5OXOCpzfojBEBt6DnEnnG9MY0zk1XLg==}
+  '@types/node@22.7.5':
+    resolution: {integrity: sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==}
 
   ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
@@ -349,8 +349,8 @@ packages:
   lru-cache@4.1.5:
     resolution: {integrity: sha512-sWZlbEP2OsHNkXrMl5GYk/jKk70MBng6UU4YI/qGDYbgf6YbP4EvmqISbXCoJiRKs+1bSpFHVgQxvJ17F2li5g==}
 
-  memfs@4.12.0:
-    resolution: {integrity: sha512-74wDsex5tQDSClVkeK1vtxqYCAgCoXxx+K4NSHzgU/muYVYByFqa+0RnrPO9NM6naWm1+G9JmZ0p6QHhXmeYfA==}
+  memfs@4.13.0:
+    resolution: {integrity: sha512-dIs5KGy24fbdDhIAg0RxXpFqQp3RwL6wgSMRF9OSuphL/Uc9a4u2/SDJKPLj/zUgtOGKuHrRMrj563+IErj4Cg==}
     engines: {node: '>= 4.0.0'}
 
   merge2@1.4.1:
@@ -767,12 +767,12 @@ snapshots:
   '@jsonjoy.com/json-pack@1.1.0(tslib@2.7.0)':
     dependencies:
       '@jsonjoy.com/base64': 1.1.2(tslib@2.7.0)
-      '@jsonjoy.com/util': 1.3.0(tslib@2.7.0)
+      '@jsonjoy.com/util': 1.5.0(tslib@2.7.0)
       hyperdyperid: 1.2.0
       thingies: 1.21.0(tslib@2.7.0)
       tslib: 2.7.0
 
-  '@jsonjoy.com/util@1.3.0(tslib@2.7.0)':
+  '@jsonjoy.com/util@1.5.0(tslib@2.7.0)':
     dependencies:
       tslib: 2.7.0
 
@@ -806,7 +806,7 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
-  '@types/node@22.7.4':
+  '@types/node@22.7.5':
     dependencies:
       undici-types: 6.19.8
 
@@ -1007,10 +1007,10 @@ snapshots:
       pseudomap: 1.0.2
       yallist: 2.1.2
 
-  memfs@4.12.0:
+  memfs@4.13.0:
     dependencies:
       '@jsonjoy.com/json-pack': 1.1.0(tslib@2.7.0)
-      '@jsonjoy.com/util': 1.3.0(tslib@2.7.0)
+      '@jsonjoy.com/util': 1.5.0(tslib@2.7.0)
       tree-dump: 1.0.2(tslib@2.7.0)
       tslib: 2.7.0
 
