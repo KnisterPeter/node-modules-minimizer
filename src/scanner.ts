@@ -65,8 +65,6 @@ export class ScannerImpl implements Scanner {
       case ts.isCallExpression(node) &&
         ts.isIdentifier(node.expression) &&
         node.expression.escapedText === "require": {
-        console.log(ts.SyntaxKind[node.kind], ts.SyntaxKind[node.parent.kind]);
-
         let isBlock = false;
         let parent = node.parent;
         while (true) {
