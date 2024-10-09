@@ -82,7 +82,7 @@ describe("Resolver", () => {
 
   it("does resolve packages with index file", () => {
     const vol = Volume.fromJSON({
-      "/folder/node_modules/tool/package.json": JSON.stringify({}),
+      "/folder/node_modules/tool/package.json": "{}",
       "/folder/node_modules/tool/index.js": JSON.stringify({}),
     });
 
@@ -569,5 +569,18 @@ describe("Resolver", () => {
         path: "/folder/node_modules/other/dist/index.js",
       },
     ]);
+  });
+
+  it("does throw on failed resolution for optional dependencies", () => {
+    const vol = Volume.fromJSON({
+      "/folder/package.json": JSON.stringify({}),
+      "/folder/node_modules/other/package.json": JSON.stringify({}),
+      "/folder/node_modules/other/dist/index.js": "",
+    });
+
+    Assert.throws(() =>
+      resolveModule("other", "/folder/file", createFsFromVolume(vol) as any),
+    ),
+      /Cannot find package 'other' from '\/folder\/file'. But it's not listed in dependencies or peerDependencies/;
   });
 });

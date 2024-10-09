@@ -20,6 +20,9 @@ export function resolveModule(
   return resolved;
 }
 
+export class ResolutionError extends Error {}
+export class OptionalResolutionError extends Error {}
+
 interface Resolver {
   run(): File[];
 }
@@ -65,8 +68,14 @@ class ResolverImpl implements Resolver {
   }
 
   private resolutionError(): never {
-    throw new Error(
+    throw new ResolutionError(
       `Cannot find package '${this.moduleId}' from '${this.source}'`,
+    );
+  }
+
+  private optionalResolutionError(): never {
+    throw new ResolutionError(
+      `Cannot find package '${this.moduleId}' from '${this.source}'. But it's not listed in dependencies or peerDependencies`,
     );
   }
 
@@ -95,54 +104,65 @@ class ResolverImpl implements Resolver {
       /^(?<package>(?:@[^/]+\/[^/]+|[^/]+))(?:\/(?<path>.*))?/,
     );
     if (!moduleMatches?.groups?.package) this.resolutionError();
-    const packageImportName = moduleMatches.groups.package;
-    const packageImportPath: string | undefined = moduleMatches.groups.path;
-    const packagePath = findInNodeModules(
-      packageImportName,
+    const importPackageName = moduleMatches.groups.package;
+    const importPackageSubpath: string | undefined = moduleMatches.groups.path;
+    const importPackagePath = findInNodeModules(
+      importPackageName,
       Path.dirname(this.source),
     );
 
     let file: File | undefined;
 
-    let [path, packageJson] = readPackageJson(packagePath, this.fs);
-    if (path && packageJson) {
+    let [path, packageJson] = readPackageJson(importPackagePath, this.fs);
+    if (path && packageJson && typeof packageJson == "object") {
       files.push({ path, isFile: false });
 
-      if (!packageJson || typeof packageJson !== "object")
-        this.resolutionError();
-
-      if ("exports" in packageJson) {
+      if (hasKey(packageJson, "exports")) {
         file = this.resolveExportMap(
-          packagePath,
+          importPackagePath,
           packageJson.exports,
-          packageImportPath,
+          importPackageSubpath,
         );
         if (file) {
           files.push(file);
           return files;
         }
-      } else if (packageImportPath) {
-        path = Path.join(packagePath, packageImportPath);
+      } else if (importPackageSubpath) {
+        path = Path.join(importPackagePath, importPackageSubpath);
       } else if (
-        "module" in packageJson &&
+        hasKey(packageJson, "module") &&
         typeof packageJson.module === "string"
       ) {
-        path = Path.join(packagePath, packageJson.module);
+        path = Path.join(importPackagePath, packageJson.module);
       } else if (
-        "main" in packageJson &&
+        hasKey(packageJson, "main") &&
         typeof packageJson.main === "string"
       ) {
-        path = Path.join(packagePath, packageJson.main);
+        path = Path.join(importPackagePath, packageJson.main);
       } else {
-        path = Path.join(packagePath, "index.js");
+        path = Path.join(importPackagePath, "index.js");
       }
 
       if (path) {
-        file = this.resolveFile(path, packagePath);
+        file = this.resolveFile(path, importPackagePath);
         if (file) {
           files.push(file);
           return files;
         }
+      }
+    }
+
+    const [, sourcePackage] = readPackageJson(this.source, this.fs);
+    if (sourcePackage) {
+      const isRequiredDependency =
+        hasKey(sourcePackage, "dependencies") &&
+        hasKey(sourcePackage.dependencies, importPackageName);
+      const isPeerDependency =
+        hasKey(sourcePackage, "peerDependencies") &&
+        hasKey(sourcePackage.peerDependencies, importPackageName);
+
+      if (!isRequiredDependency && !isPeerDependency) {
+        this.optionalResolutionError();
       }
     }
 
@@ -253,4 +273,11 @@ function readPackageJson(
     if (parent === directory) return [undefined, undefined];
     directory = parent;
   }
+}
+
+function hasKey<Key extends string>(
+  obj: unknown,
+  key: Key,
+): obj is Record<string, unknown> & Record<Key, unknown> {
+  return Boolean(typeof obj === "object" && obj && key in obj);
 }

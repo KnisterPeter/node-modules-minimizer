@@ -2,7 +2,7 @@ import Fs from "node:fs";
 import Module from "node:module";
 import ts from "typescript";
 import type { File } from "./file.js";
-import { resolveModule } from "./resolver.js";
+import { OptionalResolutionError, resolveModule } from "./resolver.js";
 
 export function createScanner(source: ts.SourceFile): Scanner {
   return new ScannerImpl(source);
@@ -132,7 +132,7 @@ export class ScannerImpl implements Scanner {
         this.#files.set(file.path, file);
       }
     } catch (err) {
-      if (optional) {
+      if (optional || err instanceof OptionalResolutionError) {
         // todo: allow more than one diagnostic per file
         this.#diagnostics.set(this.#source.fileName, {
           file: this.#source.fileName,
