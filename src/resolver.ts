@@ -73,21 +73,22 @@ class ResolverImpl implements Resolver {
   private resolvePackage(): File[] {
     const files: File[] = [];
 
-    const findInNodeModules = (moduleId: string, dir: string) => {
+    const findInNodeModules = (moduleId: string, dir: string): string => {
       let path = Path.join(dir, "node_modules", moduleId);
-      let stat = statPath(path, this.fs);
-      if (stat) {
-        if (stat.isSymbolicLink()) {
-          files.push({ path, isFile: false });
-          path = this.fs.realpathSync(path);
-          stat = statPath(path, this.fs);
+      while (true) {
+        let stat = statPath(path, this.fs);
+        if (stat) {
+          if (stat.isSymbolicLink()) {
+            files.push({ path, isFile: false });
+            path = this.fs.realpathSync(path);
+            stat = statPath(path, this.fs);
+          }
+          if (stat) return path;
         }
-        if (stat) return path;
+        const parent = Path.dirname(dir);
+        if (parent === dir) this.resolutionError();
+        path = parent;
       }
-
-      const parent = Path.dirname(dir);
-      if (parent === dir) this.resolutionError();
-      return findInNodeModules(moduleId, parent);
     };
 
     const moduleMatches = this.moduleId.match(
