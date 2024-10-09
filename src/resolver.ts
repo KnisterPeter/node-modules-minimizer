@@ -42,7 +42,7 @@ class ResolverImpl implements Resolver {
     const isCommonJs = [".cjs", ".cts"].some((ext) => path.endsWith(ext));
     if (isCommonJs) return "commonjs";
 
-    const pkg = readPackageJson(path, this.fs);
+    const [, pkg] = readPackageJson(path, this.fs);
     return pkg &&
       typeof pkg === "object" &&
       "type" in pkg &&
@@ -104,12 +104,9 @@ class ResolverImpl implements Resolver {
 
     let file: File | undefined;
 
-    let path = Path.join(packagePath, "package.json");
-    if (hasFile(path, this.fs)) {
+    let [path, packageJson] = readPackageJson(packagePath, this.fs);
+    if (path && packageJson) {
       files.push({ path, isFile: false });
-      const packageJson = JSON.parse(
-        this.fs.readFileSync(path, "utf8"),
-      ) as unknown;
 
       if (!packageJson || typeof packageJson !== "object")
         this.resolutionError();
@@ -236,19 +233,24 @@ function hasFile(path: string, fs: FileSystem) {
   return Boolean(statPath(path, fs));
 }
 
-function readPackageJson(path: string, fs: FileSystem): unknown {
+function readPackageJson(
+  path: string,
+  fs: FileSystem,
+): [path: string | undefined, packageJson: unknown] {
   let directory = path;
   let stat = statPath(directory, fs);
-  if (stat?.isFile()) {
-    directory = Path.dirname(directory);
-  }
+  if (stat?.isFile()) directory = Path.dirname(directory);
+
   while (true) {
     const packageJsonPath = Path.join(directory, "package.json");
     if (hasFile(packageJsonPath, fs)) {
-      return JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+      return [
+        packageJsonPath,
+        JSON.parse(fs.readFileSync(packageJsonPath, "utf8")),
+      ];
     }
     const parent = Path.dirname(directory);
-    if (parent === directory) return;
+    if (parent === directory) return [undefined, undefined];
     directory = parent;
   }
 }
