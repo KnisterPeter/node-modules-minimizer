@@ -99,6 +99,32 @@ describe("Resolver", () => {
     ]);
   });
 
+  it("does resolve packages with package.json module entry", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({
+        module: "dist/esm/index.js",
+      }),
+      "/folder/node_modules/tool/dist/esm/index.js": "",
+    });
+
+    const result = resolveModule(
+      "tool",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/tool/dist/esm/index.js",
+      },
+    ]);
+  });
+
   it("does resolve packages with package.json main entry", () => {
     const vol = Volume.fromJSON({
       "/folder/node_modules/tool/package.json": JSON.stringify({

@@ -130,11 +130,19 @@ class ResolverImpl implements Resolver {
       } else if (packageImportPath) {
         path = Path.join(packagePath, packageImportPath);
       } else if (
+        "module" in packageJson &&
+        typeof packageJson.module === "string"
+      ) {
+        path = Path.join(packagePath, packageJson.module);
+      } else if (
         "main" in packageJson &&
         typeof packageJson.main === "string"
       ) {
         path = Path.join(packagePath, packageJson.main);
+      } else {
+        this.resolutionError();
       }
+
       if (path) {
         file = this.resolveFile(path, packagePath);
         if (file) {
