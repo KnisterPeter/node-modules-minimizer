@@ -36,6 +36,21 @@ class ResolverImpl implements Resolver {
     this.fs = fs;
   }
 
+  private calculateResolverMode(path: string): "module" | "commonjs" {
+    const isModule = [".mjs", ".mts"].some((ext) => path.endsWith(ext));
+    if (isModule) return "module";
+    const isCommonJs = [".cjs", ".cts"].some((ext) => path.endsWith(ext));
+    if (isCommonJs) return "commonjs";
+
+    const pkg = readPackageJson(path, this.fs);
+    return pkg &&
+      typeof pkg === "object" &&
+      "type" in pkg &&
+      pkg?.type === "module"
+      ? "module"
+      : "commonjs";
+  }
+
   public run(): File[] {
     const requiredFiles: File[] = [];
 
@@ -86,13 +101,13 @@ class ResolverImpl implements Resolver {
       Path.dirname(this.source),
     );
 
-    let path = Path.join(packagePath, "index.js");
-    if (hasFile(path, this.fs)) {
-      files.push({ path, isFile: true });
+    let file = this.resolveFile("index.js", packagePath);
+    if (file) {
+      files.push(file);
       return files;
     }
 
-    path = Path.join(packagePath, "package.json");
+    let path = Path.join(packagePath, "package.json");
     if (hasFile(path, this.fs)) {
       files.push({ path, isFile: false });
       const packageJson = JSON.parse(
@@ -103,22 +118,37 @@ class ResolverImpl implements Resolver {
         this.resolutionError();
 
       if ("exports" in packageJson) {
-        const resolved = this.resolveExportMap(
+        file = this.resolveExportMap(
           packagePath,
           packageJson.exports,
-          packageImportName,
           packageImportPath,
         );
-        if (resolved) {
-          files.push(resolved);
+        if (file) {
+          files.push(file);
           return files;
         }
+      } else if (packageImportPath) {
+        path = Path.join(packagePath, packageImportPath);
+      } else if (
+        "module" in packageJson &&
+        typeof packageJson.module === "string"
+      ) {
+        path = Path.join(packagePath, packageJson.module);
+      } else if (
+        "main" in packageJson &&
+        typeof packageJson.main === "string"
+      ) {
+        path = Path.join(packagePath, packageJson.main);
+      } else {
+        this.resolutionError();
       }
 
-      if ("main" in packageJson && typeof packageJson.main === "string") {
-        path = Path.join(packagePath, packageJson.main);
-        files.push({ path, isFile: true });
-        return files;
+      if (path) {
+        file = this.resolveFile(path, packagePath);
+        if (file) {
+          files.push(file);
+          return files;
+        }
       }
     }
 
@@ -128,7 +158,6 @@ class ResolverImpl implements Resolver {
   private resolveExportMap(
     packagePath: string,
     exportMap: unknown,
-    packageImportName: string,
     packageImportPath: string | undefined,
   ): File | undefined {
     let toResolve: unknown = exportMap;
@@ -144,28 +173,29 @@ class ResolverImpl implements Resolver {
       for (const [k, v] of Object.entries(
         toResolve as Record<string, unknown>,
       )) {
-        if (k === "import") {
-          toResolve = (toResolve as Record<string, unknown>)["import"];
-          break;
-        } else if (k === "default") {
+        if (k === "default") {
           toResolve = (toResolve as Record<string, unknown>)["default"];
+          break;
+        } else if (k === "import") {
+          toResolve = (toResolve as Record<string, unknown>)["import"];
           break;
         }
       }
     }
 
     if (typeof toResolve === "string") {
-      const path = Path.join(packagePath, toResolve);
-      if (hasFile(path, this.fs)) return { path, isFile: true };
+      return this.resolveFile(toResolve, packagePath);
     }
   }
 
   private resolveModule(): File {
-    const base = Path.dirname(this.source);
+    const file = this.resolveFile(this.moduleId, Path.dirname(this.source));
+    if (file) return file;
+    this.resolutionError();
+  }
 
-    let path = this.moduleId.startsWith("/")
-      ? this.moduleId
-      : Path.join(base, this.moduleId);
+  private resolveFile(moduleId: string, base: string): File | undefined {
+    let path = moduleId.startsWith("/") ? moduleId : Path.join(base, moduleId);
     for (const ext of ["", ".js"]) {
       let testPath = path + ext;
       const stat = statPath(testPath, this.fs);
@@ -186,7 +216,7 @@ class ResolverImpl implements Resolver {
     }
 
     if (this.source.endsWith(".ts")) {
-      const tsModuleId = this.moduleId.replace(/\.js$/, ".ts");
+      const tsModuleId = moduleId.replace(/\.js$/, ".ts");
       path = tsModuleId.startsWith("/")
         ? tsModuleId
         : Path.join(base, tsModuleId);
@@ -194,8 +224,6 @@ class ResolverImpl implements Resolver {
         return { path: this.fs.realpathSync(Path.resolve(path)), isFile: true };
       }
     }
-
-    this.resolutionError();
   }
 }
 
@@ -209,4 +237,21 @@ function statPath(path: string, fs: FileSystem) {
 
 function hasFile(path: string, fs: FileSystem) {
   return Boolean(statPath(path, fs));
+}
+
+function readPackageJson(path: string, fs: FileSystem): unknown {
+  let directory = path;
+  let stat = statPath(directory, fs);
+  if (stat?.isFile()) {
+    directory = Path.dirname(directory);
+  }
+  while (true) {
+    const packageJsonPath = Path.join(directory, "package.json");
+    if (hasFile(packageJsonPath, fs)) {
+      return JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    }
+    const parent = Path.dirname(directory);
+    if (parent === directory) return;
+    directory = parent;
+  }
 }
