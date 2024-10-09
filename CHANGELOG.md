@@ -1,5 +1,16 @@
 # node-modules-minimizer
 
+## 0.7.0
+
+### Minor Changes
+
+- 920fcb6: Handle optional (unlisted) dependencies
+
+### Patch Changes
+
+- b5f5d59: Use loop instead of recursion
+- da485d2: Remove log output
+
 ## 0.6.0
 
 ### Minor Changes
