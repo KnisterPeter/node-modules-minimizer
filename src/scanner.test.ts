@@ -87,4 +87,74 @@ describe("Scanner", () => {
       },
     ]);
   });
+
+  it("should mark dynamic imports as optional", () => {
+    const source = ts.createSourceFile(
+      "src/file.ts",
+      `
+        await import('./not-found.js');
+      `,
+      ts.ScriptTarget.ESNext,
+      /* setParentNodes: */ true,
+    );
+
+    const scanner = createScanner(source);
+    scanner.run();
+
+    Assert.deepEqual(
+      scanner.files.map((file) => Path.relative(process.cwd(), file.path)),
+      [],
+    );
+    Assert.deepEqual(scanner.diagnostics, [
+      {
+        file: "src/file.ts",
+        message: `Ignoring resolution error on dependency 'import('./not-found.js')' which is tagged as optional.`,
+      },
+    ]);
+  });
+
+  it("should mark top-level require as non-optional", () => {
+    const source = ts.createSourceFile(
+      "src/file.ts",
+      `
+        require('./not-found.js');
+      `,
+      ts.ScriptTarget.ESNext,
+      /* setParentNodes: */ true,
+    );
+
+    const scanner = createScanner(source);
+    Assert.throws(
+      () => scanner.run(),
+      /Cannot find package '.\/not-found.js' from '[^']*'/,
+    );
+  });
+
+  it("should mark 'dynamic' require as optional", () => {
+    const source = ts.createSourceFile(
+      "src/file.ts",
+      `
+      try {
+        require('./not-found.js');
+      } catch {
+      }
+      `,
+      ts.ScriptTarget.ESNext,
+      /* setParentNodes: */ true,
+    );
+
+    const scanner = createScanner(source);
+    scanner.run();
+
+    Assert.deepEqual(
+      scanner.files.map((file) => Path.relative(process.cwd(), file.path)),
+      [],
+    );
+    Assert.deepEqual(scanner.diagnostics, [
+      {
+        file: "src/file.ts",
+        message: `Ignoring resolution error on dependency 'require('./not-found.js')' which is tagged as optional.`,
+      },
+    ]);
+  });
 });

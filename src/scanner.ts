@@ -59,13 +59,28 @@ export class ScannerImpl implements Scanner {
       }
       case ts.isCallExpression(node) &&
         node.expression.kind === ts.SyntaxKind.ImportKeyword: {
-        this.visitDynamicImport(node);
+        this.visitDynamicImport(node, true);
         break;
       }
       case ts.isCallExpression(node) &&
         ts.isIdentifier(node.expression) &&
         node.expression.escapedText === "require": {
-        this.visitDynamicImport(node);
+        console.log(ts.SyntaxKind[node.kind], ts.SyntaxKind[node.parent.kind]);
+
+        let isBlock = false;
+        let parent = node.parent;
+        while (true) {
+          if (ts.isBlock(parent)) {
+            isBlock = true;
+            break;
+          }
+          parent = parent.parent;
+          if (parent === this.#source) {
+            break;
+          }
+        }
+
+        this.visitDynamicImport(node, /* optional */ isBlock);
         break;
       }
       default:
@@ -86,11 +101,15 @@ export class ScannerImpl implements Scanner {
     this.addModuleToScan(node, node.moduleSpecifier);
   }
 
-  private visitDynamicImport(node: ts.CallExpression) {
-    this.addModuleToScan(node, node.arguments[0]);
+  private visitDynamicImport(node: ts.CallExpression, optional = false) {
+    this.addModuleToScan(node, node.arguments[0], optional);
   }
 
-  private addModuleToScan(node: ts.Node, expression: ts.Expression) {
+  private addModuleToScan(
+    node: ts.Node,
+    expression: ts.Expression,
+    optional = false,
+  ) {
     if (!ts.isLiteralExpression(expression)) {
       // todo: allow more than one diagnostic per file
       if (!this.#diagnostics.has(this.#source.fileName)) {
@@ -105,9 +124,25 @@ export class ScannerImpl implements Scanner {
     // skipping build in modules
     if (Module.isBuiltin(expression.text)) return;
 
-    const resolved = resolveModule(expression.text, this.#source.fileName, Fs);
-    for (const file of resolved) {
-      this.#files.set(file.path, file);
+    try {
+      const resolved = resolveModule(
+        expression.text,
+        this.#source.fileName,
+        Fs,
+      );
+      for (const file of resolved) {
+        this.#files.set(file.path, file);
+      }
+    } catch (err) {
+      if (optional) {
+        // todo: allow more than one diagnostic per file
+        this.#diagnostics.set(this.#source.fileName, {
+          file: this.#source.fileName,
+          message: `Ignoring resolution error on dependency '${node.getText()}' which is tagged as optional.`,
+        });
+        return;
+      }
+      throw err;
     }
   }
 }
