@@ -1,5 +1,11 @@
 # node-modules-minimizer
 
+## 0.5.1
+
+### Patch Changes
+
+- 109337a: Fix package.json without main or module entry resolution
+
 ## 0.5.0
 
 ### Minor Changes
