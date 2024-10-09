@@ -104,6 +104,7 @@ describe("Resolver", () => {
       "/folder/node_modules/tool/package.json": JSON.stringify({
         main: "dist/index.js",
       }),
+      "/folder/node_modules/tool/dist/index.js": "",
     });
 
     const result = resolveModule(
@@ -501,6 +502,30 @@ describe("Resolver", () => {
       {
         isFile: true,
         path: "/folder/other/index.js",
+      },
+    ]);
+  });
+
+  it("does resolve deep imports without export map", () => {
+    const vol = Volume.fromJSON({
+      "/folder/node_modules/other/package.json": JSON.stringify({}),
+      "/folder/node_modules/other/dist/index.js": "",
+    });
+
+    const result = resolveModule(
+      "other/dist/index",
+      "/folder/file",
+      createFsFromVolume(vol) as any,
+    );
+
+    Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/other/package.json",
+      },
+      {
+        isFile: true,
+        path: "/folder/node_modules/other/dist/index.js",
       },
     ]);
   });

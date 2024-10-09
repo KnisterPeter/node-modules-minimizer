@@ -28,26 +28,21 @@ class ResolverImpl implements Resolver {
   private moduleId: string;
   private source: string;
 
-  private mode: "module" | "commonjs";
-
   private fs: FileSystem;
 
   constructor(moduleId: string, source: string, fs: FileSystem) {
     this.moduleId = moduleId;
     this.source = source;
     this.fs = fs;
-    this.mode = this.calculateResolverMode();
   }
 
-  private calculateResolverMode(): "module" | "commonjs" {
-    const isModule = [".mjs", ".mts"].some((ext) => this.source.endsWith(ext));
+  private calculateResolverMode(path: string): "module" | "commonjs" {
+    const isModule = [".mjs", ".mts"].some((ext) => path.endsWith(ext));
     if (isModule) return "module";
-    const isCommonJs = [".cjs", ".cts"].some((ext) =>
-      this.source.endsWith(ext),
-    );
+    const isCommonJs = [".cjs", ".cts"].some((ext) => path.endsWith(ext));
     if (isCommonJs) return "commonjs";
 
-    const pkg = readPackageJson(this.source, this.fs);
+    const pkg = readPackageJson(path, this.fs);
     return pkg &&
       typeof pkg === "object" &&
       "type" in pkg &&
@@ -106,13 +101,13 @@ class ResolverImpl implements Resolver {
       Path.dirname(this.source),
     );
 
-    let path = Path.join(packagePath, "index.js");
-    if (hasFile(path, this.fs)) {
-      files.push({ path, isFile: true });
+    let file = this.resolveFile("index.js", packagePath);
+    if (file) {
+      files.push(file);
       return files;
     }
 
-    path = Path.join(packagePath, "package.json");
+    let path = Path.join(packagePath, "package.json");
     if (hasFile(path, this.fs)) {
       files.push({ path, isFile: false });
       const packageJson = JSON.parse(
@@ -123,21 +118,29 @@ class ResolverImpl implements Resolver {
         this.resolutionError();
 
       if ("exports" in packageJson) {
-        const resolved = this.resolveExportMap(
+        file = this.resolveExportMap(
           packagePath,
           packageJson.exports,
           packageImportPath,
         );
-        if (resolved) {
-          files.push(resolved);
+        if (file) {
+          files.push(file);
           return files;
         }
-      }
-
-      if ("main" in packageJson && typeof packageJson.main === "string") {
+      } else if (packageImportPath) {
+        path = Path.join(packagePath, packageImportPath);
+      } else if (
+        "main" in packageJson &&
+        typeof packageJson.main === "string"
+      ) {
         path = Path.join(packagePath, packageJson.main);
-        files.push({ path, isFile: true });
-        return files;
+      }
+      if (path) {
+        file = this.resolveFile(path, packagePath);
+        if (file) {
+          files.push(file);
+          return files;
+        }
       }
     }
 
@@ -173,17 +176,18 @@ class ResolverImpl implements Resolver {
     }
 
     if (typeof toResolve === "string") {
-      const path = Path.join(packagePath, toResolve);
-      if (hasFile(path, this.fs)) return { path, isFile: true };
+      return this.resolveFile(toResolve, packagePath);
     }
   }
 
   private resolveModule(): File {
-    const base = Path.dirname(this.source);
+    const file = this.resolveFile(this.moduleId, Path.dirname(this.source));
+    if (file) return file;
+    this.resolutionError();
+  }
 
-    let path = this.moduleId.startsWith("/")
-      ? this.moduleId
-      : Path.join(base, this.moduleId);
+  private resolveFile(moduleId: string, base: string): File | undefined {
+    let path = moduleId.startsWith("/") ? moduleId : Path.join(base, moduleId);
     for (const ext of ["", ".js"]) {
       let testPath = path + ext;
       const stat = statPath(testPath, this.fs);
@@ -204,7 +208,7 @@ class ResolverImpl implements Resolver {
     }
 
     if (this.source.endsWith(".ts")) {
-      const tsModuleId = this.moduleId.replace(/\.js$/, ".ts");
+      const tsModuleId = moduleId.replace(/\.js$/, ".ts");
       path = tsModuleId.startsWith("/")
         ? tsModuleId
         : Path.join(base, tsModuleId);
@@ -212,8 +216,6 @@ class ResolverImpl implements Resolver {
         return { path: this.fs.realpathSync(Path.resolve(path)), isFile: true };
       }
     }
-
-    this.resolutionError();
   }
 }
 
