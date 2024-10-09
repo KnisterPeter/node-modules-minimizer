@@ -101,11 +101,7 @@ class ResolverImpl implements Resolver {
       Path.dirname(this.source),
     );
 
-    let file = this.resolveFile("index.js", packagePath);
-    if (file) {
-      files.push(file);
-      return files;
-    }
+    let file: File | undefined;
 
     let path = Path.join(packagePath, "package.json");
     if (hasFile(path, this.fs)) {
@@ -140,7 +136,7 @@ class ResolverImpl implements Resolver {
       ) {
         path = Path.join(packagePath, packageJson.main);
       } else {
-        this.resolutionError();
+        path = Path.join(packagePath, "index.js");
       }
 
       if (path) {

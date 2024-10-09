@@ -82,6 +82,7 @@ describe("Resolver", () => {
 
   it("does resolve packages with index file", () => {
     const vol = Volume.fromJSON({
+      "/folder/node_modules/tool/package.json": JSON.stringify({}),
       "/folder/node_modules/tool/index.js": JSON.stringify({}),
     });
 
@@ -92,6 +93,10 @@ describe("Resolver", () => {
     );
 
     Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/tool/package.json",
+      },
       {
         isFile: true,
         path: "/folder/node_modules/tool/index.js",
@@ -182,6 +187,7 @@ describe("Resolver", () => {
 
   it("does resolve symbolic links", () => {
     const vol = Volume.fromJSON({
+      "/folder/node_modules/tool@123/package.json": "{}",
       "/folder/node_modules/tool@123/index.js": "",
     });
     vol.symlinkSync(
@@ -201,6 +207,10 @@ describe("Resolver", () => {
         path: "/folder/node_modules/tool",
       },
       {
+        isFile: false,
+        path: "/folder/node_modules/tool@123/package.json",
+      },
+      {
         isFile: true,
         path: "/folder/node_modules/tool@123/index.js",
       },
@@ -209,7 +219,8 @@ describe("Resolver", () => {
 
   it("does resolve scoped packages", () => {
     const vol = Volume.fromJSON({
-      "/folder/node_modules/@scope/tool/index.js": JSON.stringify({}),
+      "/folder/node_modules/@scope/tool/package.json": "{}",
+      "/folder/node_modules/@scope/tool/index.js": "",
     });
 
     const result = resolveModule(
@@ -219,6 +230,10 @@ describe("Resolver", () => {
     );
 
     Assert.deepEqual(result, [
+      {
+        isFile: false,
+        path: "/folder/node_modules/@scope/tool/package.json",
+      },
       {
         isFile: true,
         path: "/folder/node_modules/@scope/tool/index.js",
