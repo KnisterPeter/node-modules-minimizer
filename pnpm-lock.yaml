@@ -26,13 +26,13 @@ importers:
         version: 2.27.9
       '@types/node':
         specifier: ^22.5.5
-        version: 22.13.4
+        version: 22.19.11
       memfs:
         specifier: ^4.12.0
         version: 4.14.0
       node:
         specifier: ^22.9.0
-        version: 22.14.0
+        version: 22.22.0
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -141,8 +141,8 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@22.13.4':
-    resolution: {integrity: sha512-ywP2X0DYtX3y08eFVx5fNIw7/uIv8hYUKgXoK8oayJlLnKcRfEYCxWMVE1XagUdVtCJlZT1AU4LXEABW+L1Peg==}
+  '@types/node@22.19.11':
+    resolution: {integrity: sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w==}
 
   ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
@@ -273,6 +273,7 @@ packages:
   glob@11.0.0:
     resolution: {integrity: sha512-9UiX/Bl6J2yaBbxKoEBRm4Cipxgok8kQYcOPEhScPwebu2I0HoQOuYdIO6S3hLuWoZgpDpwQZMzTFxgpkyT76g==}
     engines: {node: 20 || >=22}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   globby@11.1.0:
@@ -373,11 +374,11 @@ packages:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
     engines: {node: '>=4'}
 
-  node-bin-setup@1.1.3:
-    resolution: {integrity: sha512-opgw9iSCAzT2+6wJOETCpeRYAQxSopqQ2z+N6BXwIMsQQ7Zj5M8MaafQY8JMlolRR6R1UXg2WmhKp0p9lSOivg==}
+  node-bin-setup@1.1.4:
+    resolution: {integrity: sha512-vWNHOne0ZUavArqPP5LJta50+S8R261Fr5SvGul37HbEDcowvLjwdvd0ZeSr0r2lTSrPxl6okq9QUw8BFGiAxA==}
 
-  node@22.14.0:
-    resolution: {integrity: sha512-7RySsZymL7RSt3EKuKK29JhHh9BQV2xajqTP760PNTdZRtmRHZq1Jogw65qKkjEQKVsns5b5jJpucQyKLk+U8w==}
+  node@22.22.0:
+    resolution: {integrity: sha512-jw7A6N7prT5C8i42w3pt4QJix6hH4N1MRR0TSlDpQs2PxjFHHRORDs+1GMFll9FBWkIE9Rx6pO5yv9nhe/pU0w==}
     engines: {npm: '>=5.0.0'}
     hasBin: true
 
@@ -576,8 +577,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  undici-types@6.20.0:
-    resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
   universalify@0.1.2:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
@@ -806,9 +807,9 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
-  '@types/node@22.13.4':
+  '@types/node@22.19.11':
     dependencies:
-      undici-types: 6.20.0
+      undici-types: 6.21.0
 
   ansi-colors@4.1.3: {}
 
@@ -1029,11 +1030,11 @@ snapshots:
 
   mri@1.2.0: {}
 
-  node-bin-setup@1.1.3: {}
+  node-bin-setup@1.1.4: {}
 
-  node@22.14.0:
+  node@22.22.0:
     dependencies:
-      node-bin-setup: 1.1.3
+      node-bin-setup: 1.1.4
 
   os-tmpdir@1.0.2: {}
 
@@ -1182,7 +1183,7 @@ snapshots:
 
   typescript@5.6.3: {}
 
-  undici-types@6.20.0: {}
+  undici-types@6.21.0: {}
 
   universalify@0.1.2: {}
 
